@@ -95,8 +95,10 @@ with col2:
         <div style='background-color: #e0e0ef; padding: 20px; border-radius: 10px; margin: 20px 0;'>
     """, unsafe_allow_html=True)
     if st.button("Begin Your Journey", type="primary", use_container_width=True):
-        st.switch_page("pages/Questionnaire.py")
+        st.switch_page("pages/questionnaire.py")
     st.markdown("</div>", unsafe_allow_html=True)
+    
+
 
     # Information cards
     col_left, col_right = st.columns(2)
@@ -119,7 +121,8 @@ with col2:
 
 # Sidebar
 with st.sidebar:
-    # st.image("https://your-logo-url.png", width=100)
+    st.image("imgs/logo.png", width=100)
+    st.markdown("---")
     st.markdown("""
     <div style='font-family: "Source Sans Pro", sans-serif;'>
     <h4 style='color: #7792E3;'>How it works:</h4>

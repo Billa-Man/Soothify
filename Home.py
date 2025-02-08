@@ -95,7 +95,7 @@ with col2:
         <div style='background-color: #e0e0ef; padding: 20px; border-radius: 10px; margin: 20px 0;'>
     """, unsafe_allow_html=True)
     if st.button("Begin Your Journey", type="primary", use_container_width=True):
-        st.switch_page("pages/questionnaire.py")
+        st.switch_page("pages/Questionnaire.py")
     st.markdown("</div>", unsafe_allow_html=True)
 
     # Information cards

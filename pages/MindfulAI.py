@@ -1,3 +1,4 @@
+import base64
 import streamlit as st
 from openai import OpenAI
 from settings import settings
@@ -35,10 +36,11 @@ def process_audio_input():
 def get_complete_response(text):
     messages = [{"role": "user", "content": text}]
     try:
-        response = client.chat.completions.create(
-            model=settings.OPENAI_MODEL_ID,
-            messages=messages
-        )
+        with st.spinner("Generating response..."):
+            response = client.chat.completions.create(
+                model=settings.OPENAI_MODEL_ID,
+                messages=messages
+            )
         return response.choices[0].message.content
     except Exception as e:
         st.error(f"Error generating response: {str(e)}")
@@ -95,14 +97,39 @@ def main():
             else:
                 st.write(message["content"])
                 if st.session_state.audio_output:
-                    st.audio(st.session_state.audio_output, format="audio/mp3")
-                    st.download_button(
-                        label="Download Audio Response",
-                        data=st.session_state.audio_output,
-                        file_name="ai_response.mp3",
-                        mime="audio/mpeg",
-                        key=f"download_{len(st.session_state.messages)}"
-                    )
+                    # Custom audio player implementation
+                    audio_bytes = st.session_state.audio_output
+                    audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+                    
+                    custom_player = f"""
+                    <div class="custom-audio-player">
+                        <audio controls autoplay style="width: 100%">
+                            <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                    """
+                    st.markdown(custom_player, unsafe_allow_html=True)
+                    
+                    # Custom CSS styling
+                    st.markdown("""
+                    <style>
+                    .custom-audio-player {
+                        margin: 1rem 0;
+                        padding: 10px;
+                        background: #f8f9fa;
+                        border-radius: 10px;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    }
+                    audio::-webkit-media-controls-panel {
+                        background-color: #f8f9fa;
+                    }
+                    audio::-webkit-media-controls-play-button {
+                        background-color: #7792E3;
+                        border-radius: 50%;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
     
     # Input container
     st.markdown('<div class="input-container">', unsafe_allow_html=True)
@@ -126,7 +153,7 @@ def main():
             try:
                 speech_response = client.audio.speech.create(
                     model="tts-1",
-                    voice="alloy",
+                    voice="nova",
                     input=full_response,
                     response_format="mp3"
                 )

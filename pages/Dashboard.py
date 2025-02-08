@@ -65,7 +65,7 @@ MOODS = {
 
 # Sidebar
 with st.sidebar:
-    st.image("imgs/projectlogo.jpg", width=100)
+    st.image("media/logo.png", width=100)
     st.markdown("---")
     
     # Daily Mood Tracker

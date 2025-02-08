@@ -9,7 +9,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 
 from settings import settings
 from application.chat_tools import tools
-from database.functions.sidebar_functions import get_chat_history, save_chat_history
+# from database.functions.sidebar_functions import get_chat_history, save_chat_history
 
 
 
@@ -120,7 +120,6 @@ with col2:
 # Sidebar
 with st.sidebar:
     st.image("https://your-logo-url.png", width=100)
-    st.markdown("---")
     st.markdown("""
     <div style='font-family: "Source Sans Pro", sans-serif;'>
     <h4 style='color: #7792E3;'>How it works:</h4>

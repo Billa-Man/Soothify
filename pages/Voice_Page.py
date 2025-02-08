@@ -1,93 +1,173 @@
 import streamlit as st
 from openai import OpenAI
-
-import os
-from pathlib import Path
-import tempfile
-
+from audio_recorder_streamlit import audio_recorder
 from settings import settings
+from streamlit_mic_recorder import mic_recorder
 
 # Initialize OpenAI client
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-# Initialize session state
+# Initialize session state for chat history
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "You are a helpful mental health counselling assistant, please answer the mental health questions based on the patient's description. The assistant gives helpful, comprehensive, and appropriate answers to the user's questions."},  # Add your system message here
-        {"role": "assistant", "content": "Hello! How can I help you today?"}
-    ]
+    st.session_state.messages = [{"role": "assistant", "content": "Hi! How may I assist you today?"}]
 
-def speech_to_text(audio_file):
-    transcript = client.audio.transcriptions.create(
-        model="whisper-1",
-        file=audio_file
+def generate_voice_response(text):
+    try:
+        response = client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=text
+        )
+        return response.content
+    except Exception as e:
+        st.error("Error generating voice response")
+        return None
+
+# Custom CSS for dark theme and chat interface
+st.markdown(
+    """
+    <style>
+    /* Theme colors */
+    .stApp {
+        background-color: #e0e0ef !important;
+        color: black;
+    }
+    
+    /* Chat container */
+    .chat-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    /* Message styling */
+    .stChatMessage {
+        background-color: white;
+        border-radius: 15px;
+        padding: 10px 15px;
+        margin: 5px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Input area */
+    .input-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        background-color: white;
+        border-radius: 25px;
+        border: 1px solid #cccccc;
+        margin-top: 20px;
+    }
+    
+    /* Hide default streamlit elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Custom title */
+    .custom-title {
+        text-align: center;
+        padding: 20px 0;
+        font-size: 2.5em;
+        font-weight: bold;
+        color: black;
+    }
+    
+    /* Chat input */
+    .stChatInputContainer {
+        background-color: white;
+        border-radius: 25px;
+        border: 1px solid #cccccc;
+        padding: 5px 15px;
+    }
+
+    /* Recording button styling */
+    button[data-testid="baseButton-secondary"] {
+        background-color: #ff4b4b !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.5rem 1rem !important;
+        border-radius: 0.5rem !important;
+    }
+    
+    button[data-testid="baseButton-secondary"]:hover {
+        background-color: #ff3333 !important;
+    }
+
+    /* Chat input text color */
+    .stChatInput {
+        color: black !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# Custom title with microphone emoji
+st.markdown('<h1 class="custom-title">Voice Chat Assistant 🎙️</h1>', unsafe_allow_html=True)
+
+def process_audio_input():
+    audio = mic_recorder(
+        start_prompt="Start recording",
+        stop_prompt="Stop recording",
+        just_once=True
     )
-    return transcript.text
+    if audio:
+        try:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=("audio.wav", audio["bytes"]),
+                response_format="text"
+            )
+            return transcript
+        except Exception as e:
+            st.error("Please record for at least 0.1 seconds")
+            return None
+    return None
 
-def text_to_speech(text, voice="alloy"):
-    response = client.audio.speech.create(
-        model="tts-1",
-        voice=voice,
-        input=text
-    )
-    return response
-
-def get_assistant_response(messages):
+def generate_response(text):
     response = client.chat.completions.create(
         model=settings.OPENAI_MODEL_ID,
-        messages=messages
+        messages=[{"role": "user", "content": text}]
     )
     return response.choices[0].message.content
 
-# Streamlit UI
-st.title("Voice Chatbot 🎙️")
-
-# Display chat history
-for message in st.session_state.messages[1:]:  # Skip system message
-    with st.chat_message(message["role"]):
-        if "content" in message:
+# Chat container
+with st.container():
+    # Display chat history
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
             st.write(message["content"])
 
-# Voice input
-audio_input = st.audio_input("Speak your message")
+# Input area with improved layout
+col1, col2 = st.columns([0.8, 0.2])
+with col1:
+    user_text = st.chat_input("Type your message...")
+with col2:
+    user_audio = process_audio_input()
 
-if audio_input:
-    # Create a temporary file to store the audio
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp_file:
-        tmp_file.write(audio_input.read())
-        tmp_file_path = tmp_file.name
+# Handle inputs
+if user_audio:
+    st.session_state.messages.append({"role": "user", "content": user_audio})
+    text_response = generate_response(user_audio)
+    st.session_state.messages.append({"role": "assistant", "content": text_response})
+    
+    # Generate and play voice response
+    audio_response = generate_voice_response(text_response)
+    if audio_response:
+        st.audio(audio_response, format="audio/mp3")
+    st.rerun()
 
-    # Convert speech to text
-    user_text = speech_to_text(open(tmp_file_path, 'rb'))
-    
-    # Display user message
-    with st.chat_message("user"):
-        st.write(user_text)
-    
-    # Add user message to chat history
+if user_text:
     st.session_state.messages.append({"role": "user", "content": user_text})
+    text_response = generate_response(user_text)
+    st.session_state.messages.append({"role": "assistant", "content": text_response})
     
-    # Get assistant response
-    assistant_response = get_assistant_response(st.session_state.messages)
-    
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": assistant_response})
-    
-    # Display assistant response
-    with st.chat_message("assistant"):
-        st.write(assistant_response)
-        
-        # Convert assistant response to speech
-        audio_response = text_to_speech(assistant_response)
-        
-        # Save and play audio response
-        speech_file_path = Path("response.mp3")
-        audio_response.stream_to_file(speech_file_path)
-        
-        # Play the audio response
-        st.audio(str(speech_file_path))
-    
-    # Cleanup temporary files
-    os.unlink(tmp_file_path)
-    os.unlink(speech_file_path)
-
+    # Generate and play voice response
+    audio_response = generate_voice_response(text_response)
+    if audio_response:
+        st.audio(audio_response, format="audio/mp3")
+    st.rerun()

@@ -119,7 +119,7 @@ with col2:
 
 # Sidebar
 with st.sidebar:
-    st.image("https://your-logo-url.png", width=100)
+    # st.image("https://your-logo-url.png", width=100)
     st.markdown("""
     <div style='font-family: "Source Sans Pro", sans-serif;'>
     <h4 style='color: #7792E3;'>How it works:</h4>

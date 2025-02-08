@@ -7,9 +7,6 @@ class Settings(BaseSettings):
   OPENAI_MODEL_ID: str = "gpt-4o-mini"
   OPENAI_API_KEY: str | None = "YOUR_OPENAI_API_KEY"
 
-  # GitHub API
-  GITHUB_API_TOKEN: str | None = "YOUR_GITHUB_API_TOKEN"
-
   # SQL Database
   POSTGRES_PASSWORD: str | None = "YOUR_POSTGRES_PASSWORD"
 

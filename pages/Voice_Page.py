@@ -143,5 +143,20 @@ def main():
             
             st.rerun()
 
+    with st.sidebar:
+        st.image("media/logo.png", width=100)
+        st.markdown("---")
+        st.markdown("""
+        <div style='font-family: "Source Sans Pro", sans-serif;'>
+        <h4 style='color: #7792E3;'>How it works:</h4>
+        <ol style='color: #262730;'>
+            <li>Complete a brief assessment</li>
+            <li>Chat with our AI companion</li>
+            <li>Get personalized support</li>
+            <li>Access helpful resources</li>
+        </ol>
+        </div>
+        """, unsafe_allow_html=True)
+
 if __name__ == "__main__":
     main()

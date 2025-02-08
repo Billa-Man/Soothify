@@ -55,7 +55,7 @@ def main():
         .main-content {
             max-width: 800px;
             margin: 0 auto;
-            padding: 20px 20px 120px 20px;
+            padding: 20px;
         }
         .header {
             text-align: center;
@@ -65,14 +65,11 @@ def main():
             margin-bottom: 2rem;
         }
         .input-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: white;
+            margin-bottom: 2rem;
             padding: 1rem;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
         }
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
@@ -87,33 +84,15 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="main-content">', unsafe_allow_html=True)
-    
-    # Display current audio at the top
-    if st.session_state.audio_output:
-        st.audio(
-            st.session_state.audio_output,
-            format="audio/mp3",
-            autoplay=True,
-        )
+    # Input container at the top
+    with st.container():
+        col1, col2 = st.columns([0.8, 0.2])
+        with col1:
+            user_text = st.chat_input("Share your thoughts...")
+        with col2:
+            user_audio = process_audio_input()
 
-    # Display chat history below audio
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Input container
-    st.markdown('<div class="input-container">', unsafe_allow_html=True)
-    col1, col2 = st.columns([0.8, 0.2])
-    with col1:
-        user_text = st.chat_input("Share your thoughts...")
-    with col2:
-        user_audio = process_audio_input()
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Handle user input
+    # Handle input first
     if user_audio or user_text:
         input_text = user_audio if user_audio else user_text
         st.session_state.messages.append({"role": "user", "content": input_text})
@@ -130,20 +109,37 @@ def main():
                     input=full_response,
                     response_format="mp3"
                 )
-                # Store only the latest audio clip
                 st.session_state.audio_output = speech_response.content
             except Exception as e:
                 st.error(f"Audio generation failed: {str(e)}")
                 st.session_state.audio_output = None
 
-            # Add assistant response to history
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": full_response
             })
-            
             st.rerun()
 
+    # Main content area
+    with st.container():
+        st.markdown('<div class="main-content">', unsafe_allow_html=True)
+        
+        # Audio player
+        if st.session_state.audio_output:
+            st.audio(
+                st.session_state.audio_output,
+                format="audio/mp3",
+                autoplay=True,
+            )
+
+        # Chat history
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.write(message["content"])
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # Sidebar
     with st.sidebar:
         st.image("media/logo.png", width=100)
         st.markdown("---")

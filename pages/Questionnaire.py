@@ -231,7 +231,7 @@ if st.session_state.current_question == len(questions):
 
 # Sidebar
 with st.sidebar:
-    st.image("imgs/projectlogo.jpg", width=100)
+    st.image("media/logo.png", width=100)
     st.markdown("---")
     st.markdown("""
     <div style='font-family: "Source Sans Pro", sans-serif;'>

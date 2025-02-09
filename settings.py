@@ -7,8 +7,9 @@ class Settings(BaseSettings):
   OPENAI_MODEL_ID: str = "gpt-4o-mini"
   OPENAI_API_KEY: str | None = "YOUR_OPENAI_API_KEY"
 
-  # SQL Database
-  POSTGRES_PASSWORD: str | None = "YOUR_POSTGRES_PASSWORD"
+  # MongoDB database
+  DATABASE_HOST: str = "YOUR_MONGODB_DATABASE_HOST"
+  DATABASE_NAME: str = "YOUR_MONGODB_DATABASE_NAME"
 
   @property
   def OPENAI_MAX_TOKEN_WINDOW(self) -> int:

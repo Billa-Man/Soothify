@@ -11,6 +11,10 @@ class Settings(BaseSettings):
   DATABASE_HOST: str = "YOUR_MONGODB_DATABASE_HOST"
   DATABASE_NAME: str = "YOUR_MONGODB_DATABASE_NAME"
 
+  # Hume API
+  HUME_API_KEY: str = "YOUR_HUME_API_KEY"
+  HUME_SECRET_KEY: str = "YOUR_HUME_SECRET_KEY"
+
   @property
   def OPENAI_MAX_TOKEN_WINDOW(self) -> int:
     official_max_token_window = {

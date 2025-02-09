@@ -114,7 +114,10 @@ def process_audio_input(client):
     return None
 
 def get_complete_response(client, text):
-    messages = [{"role": "user", "content": text}]
+    messages = [
+        {"role": "system", "content": "You are a compassionate and supportive conversational assistant designed to help individuals experiencing panic attacks. Your primary goals are to provide reassurance, guide users through grounding and calming techniques, and offer empathetic, non-judgmental support."},
+        {"role": "user", "content": text}
+    ]
     try:
         with st.spinner("Generating response..."):
             response = client.chat.completions.create(

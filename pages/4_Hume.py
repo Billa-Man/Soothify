@@ -25,6 +25,9 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import List, Tuple
 from pyaudio import PyAudio
 
+# import vext.gi
+# vext.gi.activate()
+
 
 import base64
 import requests
@@ -148,7 +151,7 @@ class Connection:
         Raises:
             Exception: If any error occurs during WebSocket connection or data transmission.
         """
-        while True:
+        while not st.session_state.stop_chat:
             try:
                 async with websockets.connect(socket_url) as socket:
                     print("Connected to WebSocket")
@@ -259,7 +262,7 @@ class Connection:
         wav_buffer = io.BytesIO()
         headers_sent = False
 
-        while True:
+        while not st.session_state.stop_chat:
             # Read audio data from the stream
             data = await cls._read_audio_stream_non_blocking(audio_stream, chunk_size)
             if num_channels == 2:  # Stereo to mono conversion if stereo is detected
@@ -663,7 +666,7 @@ class StreamlitAudioChat:
         self.authenticate()
         self.setup_audio_devices()
 
-        with open("media/siri_wave.json", "r") as f:
+        with open("media/hume.json", "r") as f:
             lottie_data = json.load(f)
         lottie_json_str = json.dumps(lottie_data)
 

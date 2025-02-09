@@ -16,6 +16,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+st.logo(
+    image="media/mainlogo.png",
+    size="large"
+)
+
 # MongoDB connection
 @st.cache_resource
 def init_connection():

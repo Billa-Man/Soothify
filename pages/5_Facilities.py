@@ -49,17 +49,18 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Emergency information
-st.markdown("""
-    <div style='background-color: #FFE8E6; padding: 20px; border-radius: 10px; margin-top: 20px;'>
-        <h4 style='color: #EF5350;'>🚨 In case of emergency</h4>
-        <p>If you're experiencing a mental health emergency, please:</p>
-        <ul>
-            <li>Call emergency services (911)</li>
-            <li>Contact the National Crisis Hotline: 988</li>
-            <li>Visit the nearest emergency room</li>
-        </ul>
-    </div>
-""", unsafe_allow_html=True)
+with st.sidebar:
+    st.markdown("""
+        <div style='background-color: #FFE8E6; padding: 20px; border-radius: 10px; margin-top: 20px;'>
+            <h4 style='color: #EF5350;'>🚨 In case of emergency</h4>
+            <p>If you're experiencing a mental health emergency, please:</p>
+            <ul>
+                <li>Call emergency services (911)</li>
+                <li>Contact the National Crisis Hotline: 988</li>
+                <li>Visit the nearest emergency room</li>
+            </ul>
+        </div>
+    """, unsafe_allow_html=True)
 
 # Sample database of mental health facilities (in real implementation, this would come from a proper database)
 facilities_db = {

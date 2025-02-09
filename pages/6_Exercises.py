@@ -270,10 +270,7 @@ for i in range(0, len(exercises), 3):
                 """, unsafe_allow_html=True)
 
 # Sidebar
-with st.sidebar:
-    st.image("media/mainlogo.png", width=100)
-    st.markdown("---")
-    
+with st.sidebar:    
     # Filters
     st.subheader("Filter Exercises")
     

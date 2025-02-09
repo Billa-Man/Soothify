@@ -81,7 +81,7 @@ def lottie_audio_visualizer(audio_bytes: bytes, lottie_json: str):
           }}
           var average = sum / bufferLength;
           // Compute a scale factor (adjust the math as needed)
-          var scale = 1 + average / 256;
+          var scale = 0.9 + average / 256;
           document.getElementById('lottie-container').style.transform = 'scale(' + scale + ')';
       }}
       

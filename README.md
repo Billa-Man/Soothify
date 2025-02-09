@@ -8,6 +8,8 @@
 
 # Introduction
 
+![](screenshots/hume.gif)
+
 Find compassionate support through natural voice chats. No more silent battles or appointment waits.
 
 **What it does:**
@@ -21,18 +23,16 @@ A voice-based companion that listens and supports you through daily emotional ch
 
 # Screenshots
 
-<!--
 <table>
   <tr>
-    <td><img src="screenshots/home_page.png"></td>
-    <td><img src="screenshots/repo_explorer.png"></td>
+    <td><img src="screenshots/ss1.png"></td>
+    <td><img src="screenshots/ss2.png"></td>
   </tr>
   <tr>
-    <td><img src="screenshots/issue_tracker.png"></td>
-    <td><img src="screenshots/bookmarked_repos.png"></td>
+    <td><img src="screenshots/ss3.png"></td>
+    <td><img src="screenshots/ss4.png"></td>
   </tr>
 </table>
--->
 
 # Project Setup Guide
 This guide will help you set up and run the project locally.

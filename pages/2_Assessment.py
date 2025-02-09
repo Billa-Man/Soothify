@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Page configuration
 st.set_page_config(
@@ -37,7 +37,7 @@ st.markdown("""
         font-family: 'Source Sans Pro', sans-serif;
         color: #262730;
     }
-    
+
     .question-container {
         background-color: #F0F2F5;
         padding: 30px;
@@ -60,12 +60,12 @@ st.markdown("""
         border-radius: 5px;
         transition: transform 0.2s;
     }
-    
+
     .previous-button > button {
         background-color: #6c757d !important;
         color:white;
     }
-    
+
     .score-card {
         background-color: #e0e0ef;
         padding: 20px;
@@ -73,7 +73,7 @@ st.markdown("""
         margin: 20px 0;
         text-align: center;
     }
-    
+
     .severity-mild { color: #4CAF50; }
     .severity-moderate { color: #FFA726; }
     .severity-severe { color: #EF5350; }
@@ -145,25 +145,6 @@ if 'score' not in st.session_state:
 # Main content
 st.markdown("<h1 style='text-align: center; color: #262730;'>Mental Health Assessment</h1>", unsafe_allow_html=True)
 
-# Show previous assessment if it exists
-if st.session_state.last_assessment and st.session_state.current_question == 0:
-    st.markdown(f"""
-        <div class="score-card">
-            <h3>Your Previous Assessment</h3>
-            <p>Taken on: {st.session_state.last_assessment['date'].strftime('%B %d, %Y')}</p>
-            <h3 class="{st.session_state.last_assessment['color']}">
-                Severity Level: {st.session_state.last_assessment['severity'].title()}
-            </h3>
-            <p>{st.session_state.last_assessment['recommendation']}</p>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Start New Assessment", use_container_width=True):
-            st.session_state.current_question = 1
-            st.rerun()
-
 # Only show progress during questions
 if st.session_state.current_question < len(questions):
     progress = st.session_state.current_question / len(questions)
@@ -219,21 +200,18 @@ if st.session_state.current_question == len(questions):
     if score_percentage < 30:
         severity = "mild"
         color = "severity-mild"
-        recommendation = "Based on your responses, you might benefit from our AI chat support."
-        action_button = "Start Chat"
-        action_page = "pages/chat.py"
+        recommendation = "Based on your responses, we recommend exploring AI chat, reading wellness blogs, and trying some guided exercises."
+        buttons = [("AI Chat", "pages/chat.py"), ("Wellness Blogs", "pages/blogs.py"), ("Guided Exercises", "pages/exercises.py")]
     elif score_percentage < 60:
         severity = "moderate"
         color = "severity-moderate"
         recommendation = "We recommend speaking with a mental health professional. Our AI chat support is also available."
-        action_button = "Find Help"
-        action_page = "pages/resources.py"
+        buttons = [("AI Chat", "pages/chat.py")]
     else:
         severity = "severe"
         color = "severity-severe"
         recommendation = "We strongly recommend immediate consultation with a mental health professional."
-        action_button = "Find Facilities"
-        action_page = "pages/Facilities.py"
+        buttons = [("Find Facilities", "pages/facilities.py")]
 
     # Store current assessment
     st.session_state.last_assessment = {
@@ -253,18 +231,12 @@ if st.session_state.current_question == len(questions):
         </div>
     """, unsafe_allow_html=True)
 
+    # Display action buttons based on severity
     col1, col2, col3 = st.columns([1,1,1])
     with col2:
-        left_col, right_col = st.columns(2)
-        with left_col:
-            if st.button("Restart Assessment", use_container_width=True):
-                st.session_state.current_question = 0
-                st.session_state.responses = {}
-                st.session_state.score = 0
-                st.rerun()
-        with right_col:
-            if st.button(action_button, use_container_width=True):
-                st.switch_page(action_page)
+        for button_text, page in buttons:
+            if st.button(button_text, use_container_width=True):
+                st.switch_page(page)
 
 # Sidebar
 with st.sidebar:

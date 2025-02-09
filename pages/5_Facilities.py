@@ -103,7 +103,7 @@ def find_nearby_facilities(user_coords, max_distance=10):
     return nearby
 
 # Main content
-st.title("Find Mental Health Facilities Near You")
+st.title("Find Mental Health Facilities Near Your Locality")
 
 # Input section
 col1, col2, col3 = st.columns([1,2,1])

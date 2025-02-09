@@ -21,6 +21,9 @@ A voice-based companion that listens and supports you through daily emotional ch
 - Responds with empathy to your feelings
 - Available anytime you need support
 
+**Backstory:**
+The idea sparked when I found my roommate having a severe panic attack one night, unable to reach his therapist, which revealed the critical need for 24/7 emotional support. His months of silent struggles and midnight battles with anxiety in our shared apartment drove me to envision a solution that would always be there. Watching how simply talking aloud helped him calm down during recovery periods led to our voice-first approach, moving beyond traditional text-based support. Each of his episodes taught us that people need a compassionate voice to guide them through their darkest moments, especially when their hands shake too much to type. What began as a solution for one person's struggle evolved into a mission to ensure no one faces their emotional battles alone, creating a voice companion that listens and supports whenever needed.
+
 # Screenshots
 
 <table>

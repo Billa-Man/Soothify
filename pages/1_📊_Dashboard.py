@@ -14,6 +14,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+st.logo(
+    image="media/companylogo.png",
+    size="large"
+)
+
 # Initialize session state for tracking
 if 'mood_history' not in st.session_state:
     st.session_state.mood_history = []
@@ -64,10 +69,7 @@ MOODS = {
 }
 
 # Sidebar
-with st.sidebar:
-    st.image("media/logo.png", width=100)
-    st.markdown("---")
-    
+with st.sidebar:    
     # Daily Mood Tracker
     st.subheader("Daily Mood Check-in")
     selected_mood = st.selectbox("How are you feeling today?", list(MOODS.keys()))
@@ -77,9 +79,7 @@ with st.sidebar:
             'mood': selected_mood
         })
         st.success(f"Mood logged: {MOODS[selected_mood]} {selected_mood}")
-    
-    # Panic Button
-    st.markdown("---")
+
     st.subheader("Panic Episode Tracker")
     if st.button("🚨 Record Panic Episode"):
         st.session_state.panic_episodes.append(datetime.now())

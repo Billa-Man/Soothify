@@ -1,4 +1,4 @@
-
+from datetime import datetime, timedelta
 import streamlit as st
 
 # Main page configuration
@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 st.logo(
-    image="media/logo.jpg",
+    image="media/companylogo.png",
     size="large"
 )
 
@@ -93,33 +93,28 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Sidebar
-with st.sidebar:
-    # Logo and company name
-    st.markdown("""
-        <div class="sidebar-header">
-            <img src="media/logo.jpg" style="width: 32px; margin-right: 10px;">
-            <span style="font-size: 1.2rem; font-weight: 600;">CalmNest</span>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Navigation items
-    nav_items = {
-        "Dashboard": "📊",
-        "Chat": "💭",
-        "Assessment": "📋",
-        "Resources": "🏥",
-        "Progress": "📈",
-        "Settings": "⚙️"
-    }
-    
-    for name, icon in nav_items.items():
-        st.markdown(f"""
-            <div class="nav-item {'active' if name == 'Dashboard' else ''}">
-                <span class="nav-icon">{icon}</span>
-                {name}
-            </div>
-        """, unsafe_allow_html=True)
+with st.sidebar:  
+    MOODS = {
+    "Happy": "😊",
+    "Neutral": "😐",
+    "Anxious": "😰",
+    "Sad": "😢",
+    "Depressed": "😔"
+    }  
+    # Daily Mood Tracker
+    st.subheader("Daily Mood Check-in")
+    selected_mood = st.selectbox("How are you feeling today?", list(MOODS.keys()))
+    if st.button("Log Mood"):
+        st.session_state.mood_history.append({
+            'timestamp': datetime.now(),
+            'mood': selected_mood
+        })
+        st.success(f"Mood logged: {MOODS[selected_mood]} {selected_mood}")
+
+    st.subheader("Panic Episode Tracker")
+    if st.button("🚨 Record Panic Episode"):
+        st.session_state.panic_episodes.append(datetime.now())
+        st.warning("Panic episode recorded. Would you like to start a chat session?")
 
 # Main content
 col1, col2, col3 = st.columns([1,2,1])

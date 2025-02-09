@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 st.logo(
-    image="media/companylogo.png",
+    image="media/logo.jpg",
     size="large"
 )
 
@@ -45,7 +45,7 @@ st.markdown("""
     }
     
     .stButton > button {
-        background-color: #EF5350 !important;
+        background-color: #7792E3 !important;
         color: white;
         font-weight: bold;
     }
@@ -103,7 +103,7 @@ with col1:
 with col2:
     st.markdown("""
         <div class="metric-card">
-            <h3>Panic Episodes (This Week)</h3>
+            <h3>Panic Episodes</h3>
             <h2>{}</h2>
             <p>↓ 20% from last week</p>
         </div>
@@ -168,15 +168,158 @@ with col1:
         st.info("No chat sessions recorded yet.")
 
 with col2:
-    st.subheader("Common Stressors")
-    # Sample stressors data
-    if len(st.session_state.stressors) > 0:
-        fig = px.pie(values=list(st.session_state.stressors.values()),
-                    names=list(st.session_state.stressors.keys()),
-                    title="Common Triggers")
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("Start logging stressors to see patterns!")
+    st.subheader("Activity Impact Analysis")
+    if 'activity_impact' not in st.session_state:
+        st.session_state.activity_impact = {
+            'Exercise': {'positive': 85, 'neutral': 10, 'negative': 5},
+            'Meditation': {'positive': 75, 'neutral': 20, 'negative': 5},
+            'Social Activities': {'positive': 70, 'neutral': 20, 'negative': 10},
+            'Reading': {'positive': 65, 'neutral': 30, 'negative': 5},
+            'Creative Work': {'positive': 80, 'neutral': 15, 'negative': 5}
+        }
+    
+    # Prepare data for visualization
+    activities = []
+    impacts = []
+    colors = []
+    
+    for activity, impact in st.session_state.activity_impact.items():
+        activities.extend([activity] * 3)
+        impacts.extend([impact['positive'], impact['neutral'], impact['negative']])
+        colors.extend(['#7792E3', '#E3E3E3', '#FFB4B4'])  # Blue, Gray, Light Red
+    
+    fig = go.Figure()
+    
+    # Add bars for each impact type
+    fig.add_trace(go.Bar(
+        name='Positive Impact',
+        y=activities[:len(activities)//3],
+        x=[st.session_state.activity_impact[act]['positive'] for act in st.session_state.activity_impact],
+        orientation='h',
+        marker_color='#7792E3',
+        text=[f"{x}%" for x in [st.session_state.activity_impact[act]['positive'] for act in st.session_state.activity_impact]],
+        textposition='auto',
+    ))
+    
+    fig.add_trace(go.Bar(
+        name='Neutral Impact',
+        y=activities[:len(activities)//3],
+        x=[st.session_state.activity_impact[act]['neutral'] for act in st.session_state.activity_impact],
+        orientation='h',
+        marker_color='#E3E3E3',
+        text=[f"{x}%" for x in [st.session_state.activity_impact[act]['neutral'] for act in st.session_state.activity_impact]],
+        textposition='auto',
+    ))
+    
+    fig.add_trace(go.Bar(
+        name='Negative Impact',
+        y=activities[:len(activities)//3],
+        x=[st.session_state.activity_impact[act]['negative'] for act in st.session_state.activity_impact],
+        orientation='h',
+        marker_color='#FFB4B4',
+        text=[f"{x}%" for x in [st.session_state.activity_impact[act]['negative'] for act in st.session_state.activity_impact]],
+        textposition='auto',
+    ))
+    
+    # Update layout
+    fig.update_layout(
+        barmode='stack',
+        height=300,
+        margin=dict(l=20, r=20, t=30, b=20),
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        xaxis_title="Impact Percentage",
+        yaxis_title="",
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family="Inter, sans-serif"),
+        xaxis=dict(showgrid=True, gridwidth=1, gridcolor='#F0F0F0'),
+        yaxis=dict(showgrid=False)
+    )
+    
+    # Display the chart
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Add a small explanation
+    st.markdown("""
+        <div style='font-size: 0.9em; color: #666; margin-top: 10px;'>
+        This chart shows how different activities impact your mental well-being based on your logged data.
+        Longer blue bars indicate more positive impact.
+        </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
+col1, col2 = st.columns(2)
+
+with col1:
+    if 'coping_strategies_effectiveness' not in st.session_state:
+        st.session_state.coping_strategies_effectiveness = {
+        'Deep Breathing': {'effective': 75, 'somewhat': 20, 'not effective': 5},
+        'Meditation': {'effective': 65, 'somewhat': 25, 'not effective': 10},
+        'Physical Exercise': {'effective': 80, 'somewhat': 15, 'not effective': 5},
+        'Journaling': {'effective': 60, 'somewhat': 30, 'not effective': 10},
+        'Social Connection': {'effective': 70, 'somewhat': 20, 'not effective': 10}
+    }
+    
+    st.subheader("Coping Strategies Effectiveness")
+# Create a sunburst chart using plotly
+    fig = px.sunburst(
+    # Transform the data for sunburst chart
+    pd.DataFrame([
+        {'strategy': strategy, 'effectiveness': eff, 'value': val}
+        for strategy, effs in st.session_state.coping_strategies_effectiveness.items()
+        for eff, val in effs.items()
+    ]),
+    path=['strategy', 'effectiveness'],
+    values='value',
+    color_discrete_sequence=px.colors.qualitative.Set3
+)
+fig.update_layout(height=400)
+st.plotly_chart(fig, use_container_width=True)
+
+with col2:
+    if 'activity_mood_impact' not in st.session_state:
+        st.session_state.activity_mood_impact = {
+        'dates': pd.date_range(start='2024-01-01', periods=30),
+        'activities': {
+            'Exercise': [1 if np.random.random() > 0.5 else 0 for _ in range(30)],
+            'Meditation': [1 if np.random.random() > 0.6 else 0 for _ in range(30)],
+            'Social': [1 if np.random.random() > 0.7 else 0 for _ in range(30)]
+        },
+        'mood_scores': [np.random.randint(1, 6) for _ in range(30)]
+    }
+
+# Add this visualization to your dashboard
+st.subheader("Activity Impact on Mood")
+# Create a parallel categories diagram
+df = pd.DataFrame(st.session_state.activity_mood_impact['activities'])
+df['mood'] = st.session_state.activity_mood_impact['mood_scores']
+df['date'] = st.session_state.activity_mood_impact['dates']
+
+fig = go.Figure(data=[
+    go.Parcats(
+        dimensions=[
+            {'label': 'Exercise',
+             'values': df['Exercise'].map({1: 'Done', 0: 'Not Done'})},
+            {'label': 'Meditation',
+             'values': df['Meditation'].map({1: 'Done', 0: 'Not Done'})},
+            {'label': 'Social',
+             'values': df['Social'].map({1: 'Done', 0: 'Not Done'})},
+            {'label': 'Mood',
+             'values': df['mood'].map({1: 'Very Low', 2: 'Low', 3: 'Neutral', 
+                                     4: 'Good', 5: 'Very Good'})}
+        ],
+        line={'color': df['mood'], 'colorscale': 'Viridis'},
+    )
+])
+fig.update_layout(height=400)
+st.plotly_chart(fig, use_container_width=True)
 
 # Weekly Calendar View
 st.markdown("---")
@@ -202,10 +345,14 @@ for week in month_calendar:
         if day == 0:
             week_data.append("")
         else:
-            mood = next((m['mood'] for m in st.session_state.mood_history 
-                        if m['timestamp'].day == day 
-                        and m['timestamp'].month == current_month), None)
-            week_data.append(f"{day} {MOODS[mood] if mood else ''}")
+            mood_entry = next((m for m in st.session_state.mood_history 
+                          if m['timestamp'].day == day 
+                          and m['timestamp'].month == current_month), None)
+            if mood_entry:
+                formatted_time = mood_entry['timestamp'].strftime('%H:%M')
+                week_data.append(f"{day} {MOODS[mood_entry['mood']]} ({formatted_time})")
+            else:
+                week_data.append(f"{day}")
     calendar_data.append(week_data)
 
 df_calendar = pd.DataFrame(calendar_data, 

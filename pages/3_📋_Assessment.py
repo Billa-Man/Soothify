@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 st.logo(
-    image="media/companylogo.png",
+    image="media/logo.jpg",
     size="large"
 )
 
@@ -35,7 +35,7 @@ st.markdown("""
     }
     
     .question-container {
-        background-color: #e0e0ef;
+        background-color: #F0F2F5;
         padding: 30px;
         border-radius: 10px;
         margin: 20px 0;
@@ -43,7 +43,7 @@ st.markdown("""
     }
     
     .stProgress > div > div > div {
-        background-color: #7792E3;
+        background-color: #A8B9ED;
     }
     
     .stButton > button {
@@ -59,6 +59,7 @@ st.markdown("""
     
     .previous-button > button {
         background-color: #6c757d !important;
+        color:white;
     }
     
     .score-card {

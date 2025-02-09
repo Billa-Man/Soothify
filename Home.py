@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 st.logo(
-    image="media/companylogo.png",
+    image="media/logo.jpg",
     size="large"
 )
 
@@ -89,6 +89,7 @@ st.markdown("""
     
     .stButton > button:hover {
         background-color: #6384dd;
+        
     }
     </style>
 """, unsafe_allow_html=True)

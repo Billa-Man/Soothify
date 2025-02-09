@@ -1,5 +1,7 @@
 import base64
+import json
 import streamlit as st
+import streamlit.components.v1 as components
 from openai import OpenAI
 from settings import settings
 from streamlit_mic_recorder import mic_recorder
@@ -17,6 +19,87 @@ st.logo(
     image="media/companylogo.png",
     size="large"
 )
+
+def lottie_audio_visualizer(audio_bytes: bytes, lottie_json: str):
+    """
+    Renders a Lottie animation that reacts to the audio's amplitude.
+    The animation container is styled so it can be placed above the chat input.
+    """
+    # Convert audio bytes to a Base64 string
+    audio_base64 = base64.b64encode(audio_bytes).decode()
+    
+    # Build the HTML/JavaScript code.
+    # Note: we removed the fixed positioning and use inline styling so that
+    # the animation appears where the component is rendered.
+    html_code = f"""
+    <div id="lottie-container" style="
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 20px auto;
+        ">
+    </div>
+    <!-- Hidden audio element -->
+    <audio id="custom-audio" src="data:audio/mp3;base64,{audio_base64}" controls style="display:none;"></audio>
+    
+    <!-- Include Lottie-web -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.7.5/lottie.min.js"></script>
+    
+    <script>
+      // Load the Lottie JSON animation
+      var lottieData = {lottie_json};
+      
+      // Initialize the Lottie animation in the container
+      var anim = lottie.loadAnimation({{
+        container: document.getElementById('lottie-container'),
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        animationData: lottieData
+      }});
+      
+      // Set up the Web Audio API to analyze the audio.
+      var audioElement = document.getElementById('custom-audio');
+      var AudioContext = window.AudioContext || window.webkitAudioContext;
+      var audioCtx = new AudioContext();
+      var analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      var bufferLength = analyser.frequencyBinCount;
+      var dataArray = new Uint8Array(bufferLength);
+      
+      // Connect the audio element to the analyser node.
+      var source = audioCtx.createMediaElementSource(audioElement);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      
+      // Animate the Lottie container based on audio amplitude.
+      function animate() {{
+          requestAnimationFrame(animate);
+          analyser.getByteFrequencyData(dataArray);
+          var sum = 0;
+          for (var i = 0; i < bufferLength; i++) {{
+              sum += dataArray[i];
+          }}
+          var average = sum / bufferLength;
+          // Compute a scale factor (adjust the math as needed)
+          var scale = 1 + average / 256;
+          document.getElementById('lottie-container').style.transform = 'scale(' + scale + ')';
+      }}
+      
+      // Start analyzing once the audio starts playing.
+      audioElement.onplay = function() {{
+          if (audioCtx.state === 'suspended') {{
+              audioCtx.resume();
+          }}
+          animate();
+      }};
+      
+      // Auto-start playback (note: browsers may require a user gesture).
+      audioElement.play().catch(function(err) {{
+          console.log("Autoplay failed:", err);
+      }});
+    </script>
+    """
+    components.html(html_code, height=320)
 
 def process_audio_input():
     audio = mic_recorder(
@@ -89,7 +172,26 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # Input container at the top
+    # Load Lottie animation JSON data for the Siri wave.
+    with open("media/siri_wave.json", "r") as f:
+        lottie_data = json.load(f)
+    lottie_json_str = json.dumps(lottie_data)
+    
+    # Use generated audio if available; otherwise, use a silent audio file.
+    if st.session_state.audio_output:
+        audio_bytes = st.session_state.audio_output
+    else:
+        try:
+            with open("media/silence.mp3", "rb") as f:
+                audio_bytes = f.read()
+        except Exception as e:
+            st.error("Missing 'media/silence.mp3' file for default audio.")
+            return
+
+    # *** NEW: Place the Lottie animation above the chat input bar ***
+    lottie_audio_visualizer(audio_bytes, lottie_json_str)
+
+    # Input container (chat input and mic recorder)
     with st.container():
         col1, col2 = st.columns([0.8, 0.2])
         with col1:
@@ -97,16 +199,16 @@ def main():
         with col2:
             user_audio = process_audio_input()
 
-    # Handle input first
+    # Handle input: use audio transcription or text input.
     if user_audio or user_text:
         input_text = user_audio if user_audio else user_text
         st.session_state.messages.append({"role": "user", "content": input_text})
 
-        # Get complete text response
+        # Get the AI response
         full_response = get_complete_response(input_text)
         
         if full_response:
-            # Generate audio from response
+            # Generate audio from the response
             try:
                 speech_response = client.audio.speech.create(
                     model="tts-1",
@@ -125,26 +227,15 @@ def main():
             })
             st.rerun()
 
-    # Main content area
+    # Main content area: display chat history.
     with st.container():
         st.markdown('<div class="main-content">', unsafe_allow_html=True)
-        
-        # Audio player
-        if st.session_state.audio_output:
-            st.audio(
-                st.session_state.audio_output,
-                format="audio/mp3",
-                autoplay=True,
-            )
-
-        # Chat history
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.write(message["content"])
-
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Sidebar
+    # Sidebar with additional information.
     with st.sidebar:
         st.markdown("""
         <div style='font-family: "Source Sans Pro", sans-serif;'>
@@ -157,6 +248,6 @@ def main():
         </ol>
         </div>
         """, unsafe_allow_html=True)
-
+        
 if __name__ == "__main__":
     main()

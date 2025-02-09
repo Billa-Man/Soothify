@@ -131,6 +131,10 @@ numpy
 pyaudio
 websockets
 playsound
+pymongo
+folium
+streamlit-folium
+geopy
 
 
 # python3-dev 

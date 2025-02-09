@@ -124,6 +124,23 @@ st.markdown("""
     .stButton > button:hover {
         background-color: #6384dd;
     }
+            
+    .exercise-title:hover {
+        color: #7792E3 !important;
+    }
+
+    a {
+        text-decoration: none !important;
+    }
+        
+    .exercise-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #1f1f1f;
+        margin-bottom: 10px;
+        transition: color 0.2s ease;
+    }
+
     </style>
 """, unsafe_allow_html=True)
 
@@ -225,6 +242,7 @@ exercises = [
 st.markdown("<h1 class='section-title'>Mental Health Exercises</h1>", unsafe_allow_html=True)
 
 # Create rows of 3 exercises each
+# Create rows of 3 exercises each
 for i in range(0, len(exercises), 3):
     cols = st.columns(3)
     for j in range(3):
@@ -236,7 +254,11 @@ for i in range(0, len(exercises), 3):
                         <div class="exercise-card">
                             <img src="{exercise['image']}" class="exercise-image" alt="{exercise['title']}">
                             <div class="exercise-content">
-                                <div class="exercise-title">{exercise['title']}</div>
+                                <a href="{exercise['url']}" target="_blank" style="text-decoration: none;">
+                                    <div class="exercise-title" style="color: #1f1f1f; cursor: pointer; transition: color 0.2s ease;">
+                                        {exercise['title']}
+                                    </div>
+                                </a>
                                 <div class="exercise-description">{exercise['description']}</div>
                                 <div class="category-tag">{exercise['category']}</div>
                                 <div class="exercise-meta">
@@ -246,7 +268,6 @@ for i in range(0, len(exercises), 3):
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
-                st.link_button("Learn More", exercise['url'], use_container_width=True)
 
 # Sidebar
 with st.sidebar:

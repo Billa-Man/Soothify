@@ -73,6 +73,15 @@ st.markdown("""
         margin-bottom: 10px;
     }
     
+    .blog-title:hover {
+        color: #7792E3 !important;
+    }
+
+    a {
+        text-decoration: none !important;
+    }
+
+    
     .blog-excerpt {
         color: #666;
         font-size: 0.9rem;
@@ -167,6 +176,7 @@ blogs = [
 st.markdown("<h1 class='section-title'>Mental Health Resources</h1>", unsafe_allow_html=True)
 
 # Create rows of 3 blogs each
+# Create rows of 3 blogs each
 for i in range(0, len(blogs), 3):
     cols = st.columns(3)
     for j in range(3):
@@ -178,7 +188,11 @@ for i in range(0, len(blogs), 3):
                         <div class="blog-card">
                             <img src="{blog['image']}" class="blog-image" alt="{blog['title']}">
                             <div class="blog-content">
-                                <div class="blog-title">{blog['title']}</div>
+                                <a href="{blog['url']}" target="_blank" style="text-decoration: none;">
+                                    <div class="blog-title" style="color: #1f1f1f; cursor: pointer; transition: color 0.2s ease;">
+                                        {blog['title']}
+                                    </div>
+                                </a>
                                 <div class="blog-excerpt">{blog['excerpt']}</div>
                                 <div class="category-tag">{blog['category']}</div>
                                 <div class="blog-meta">
@@ -188,7 +202,6 @@ for i in range(0, len(blogs), 3):
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
-                st.link_button("Read Article", blog['url'], use_container_width=True)
 
 # Sidebar
 with st.sidebar:

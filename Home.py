@@ -55,6 +55,7 @@ st.markdown("""
     
     .nav-item:hover {
         background-color: #f8f9fa;
+        color: white;
     }
     
     .nav-item.active {
@@ -89,6 +90,7 @@ st.markdown("""
     
     .stButton > button:hover {
         background-color: #6384dd;
+        color: white;
         
     }
     </style>

@@ -1,23 +1,23 @@
 # hacknyu-project
 
-**Built with:** ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white) ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=Streamlit&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white) ![OpenAI](https://img.shields.io/badge/OpenAI-74aa9c?style=flat&logo=openai&logoColor=white)
+**Built with:** ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white) ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=Streamlit&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white) ![OpenAI](https://img.shields.io/badge/OpenAI-74aa9c?style=flat&logo=openai&logoColor=white) ![Hume AI](https://img.shields.io/badge/Hume_AI-Empathic_AI-blue?logo=humeai&logoColor=white&style=flat)
 
-**Team Name:** Team ORS - We are going to rehydrate your dehydrated mental health.
+**Team Name:** Team ORS - We are going to rehydrate your dehydrated emotional health.
 
 **Contributors:** Om Thakur, Rigved Shirvalkar, Sohith Bandari (ORS)
 
 # Introduction
 
-Find the GitHub issues and repos you actually care about. No more endless scrolling.
+Find compassionate support through natural voice chats. No more silent battles or appointment waits.
 
 **What it does:**
 
-This bot helps you discover relevant GitHub repositories and issues through natural conversation. Just tell it what you're looking for, and it will fetch what matters.
+A voice-based companion that listens and supports you through daily emotional challenges.
 
 **Features:**
-- Suggests relevant repositories and issues based on the difficulty level.
-- Understands natural language questions
-- Remembers context from previous chats
+- Voice chat for natural conversations
+- Responds with empathy to your feelings
+- Available anytime you need support
 
 # Screenshots
 
@@ -80,12 +80,17 @@ DATABASE_HOST=YOUR_MONGODB_DATABASE_HOST
 
 # Database Configuration
 DATABASE_NAME=YOUR_MONGODB_DATABASE_NAME
+
+# Hume API Configuration
+HUME_API_KEY=YOUR_HUME_API_KEY
+HUME_SECRET_KEY=YOUR_HUME_SECRET_KEY
 ```
 **Important:** Replace the placeholder values:
 
 - YOUR_OPENAI_API_KEY: Your OpenAI API key from https://platform.openai.com
 - YOUR_MONGODB_DATABASE_HOST: The hostname/address where your MongoDB database is hosted (e.g., localhost, mongodb://host:port, or a connection string)
 - YOUR_MONGODB_DATABASE_NAME: The name of your MongoDB database that you want to connect to
+- YOUR_HUME_API_KEY && YOUR_HUME_SECRET_KEY: Your Hume API keys from https://platform.hume.ai
 
 **For security reasons:**
 - Never commit the .env file to version control

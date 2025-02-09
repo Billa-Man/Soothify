@@ -201,17 +201,17 @@ if st.session_state.current_question == len(questions):
         severity = "mild"
         color = "severity-mild"
         recommendation = "Based on your responses, we recommend exploring AI chat, reading wellness blogs, and trying some guided exercises."
-        buttons = [("AI Chat", "pages/chat.py"), ("Wellness Blogs", "pages/blogs.py"), ("Guided Exercises", "pages/exercises.py")]
+        buttons = [("AI Chat", "pages/3_Chat.py"), ("Wellness Blogs", "pages/7_Blogs.py"), ("Guided Exercises", "pages/6_Exercises.py")]
     elif score_percentage < 60:
         severity = "moderate"
         color = "severity-moderate"
         recommendation = "We recommend speaking with a mental health professional. Our AI chat support is also available."
-        buttons = [("AI Chat", "pages/chat.py")]
+        buttons = [("AI Chat", "pages/3_Chat.py")]
     else:
         severity = "severe"
         color = "severity-severe"
         recommendation = "We strongly recommend immediate consultation with a mental health professional."
-        buttons = [("Find Facilities", "pages/facilities.py")]
+        buttons = [("Find Facilities", "pages/5_Facilities.py")]
 
     # Store current assessment
     st.session_state.last_assessment = {

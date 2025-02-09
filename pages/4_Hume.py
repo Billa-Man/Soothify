@@ -38,6 +38,11 @@ CHANNELS = 1
 SAMPLE_WIDTH = 2
 CHUNK_SIZE = 1024
 
+st.logo(
+    image="media/mainlogo.png",
+    size="large"
+)
+
 
 class Authenticator:
     """
@@ -507,7 +512,7 @@ class StreamlitAudioChat:
                 access_token = authenticator.fetch_access_token()
                 st.session_state.access_token = access_token
                 st.session_state.authenticated = True
-                st.sidebar.success("Authentication successful!")
+                # st.sidebar.success("Authentication successful!")
             except Exception as e:
                 st.sidebar.error(f"Authentication failed: {str(e)}")
         else:
@@ -515,7 +520,7 @@ class StreamlitAudioChat:
 
     def setup_audio_devices(self):
         """Setup audio input and output devices"""
-        st.sidebar.header("Audio Device Setup")
+        # st.sidebar.header("Audio Device Setup")
         
         input_devices, output_devices = self.get_audio_devices()
         
@@ -551,7 +556,7 @@ class StreamlitAudioChat:
                 st.session_state.selected_input_device = (input_idx, sample_rate)
                 st.session_state.selected_output_device = output_idx
                 
-                st.sidebar.success("Audio devices configured successfully!")
+                # st.sidebar.success("Audio devices configured successfully!")
             else:
                 st.sidebar.error("Failed to get input device information")
         else:
@@ -658,8 +663,47 @@ class StreamlitAudioChat:
             self.audio_stream = None
 
     def main(self):
-        """Main Streamlit application"""
-        st.title("Hume AI Voice Chat")
+
+        st.markdown("""
+            <style>
+            .stApp {
+                background-color: #ffffff;
+            }
+            .main-content {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            .header {
+                text-align: center;
+                padding: 2rem 0;
+                background-color: #f8f9fa;
+                border-radius: 10px;
+                margin-bottom: 2rem;
+            }
+            .input-container {
+                margin-bottom: 2rem;
+                padding: 1rem;
+                background-color: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 10px;
+            }
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+            <div class="header">
+                <h1>🌿 Hume</h1>
+                <p>A Voice to Guide You Through Panic</p>
+            </div>
+        """, unsafe_allow_html=True)
+
+
+        # """Main Streamlit application"""
+        # st.title("Hume AI Voice Chat")
         
         # Initialize session state
         self.initialize_session_state()
@@ -699,7 +743,7 @@ class StreamlitAudioChat:
         
         if col1.button("Start Chat", disabled=start_disabled, key="start_button"):
             self.start_chat()
-            with st.spinner("Starting audio chat..."):
+            with st.spinner("Started audio chat..."):
                 asyncio.run(self.start_audio_stream(lottie_json_str))
         
         # Stop button
@@ -709,14 +753,12 @@ class StreamlitAudioChat:
         # Display chat status and instructions
         # if st.session_state.authenticated:
         st.info(f"Status: {'Connected to Hume AI - Chat Active' if st.session_state.chat_active else 'Connected to Hume AI - Chat Inactive'}")
-        st.markdown("""
+        st.sidebar.info("""
         ### Instructions:
-        1. Select your input (microphone) and output (speakers) devices in the sidebar
-        2. Click 'Configure Devices' to set up your audio devices
-        3. Click 'Start Chat' to begin the conversation
-        4. Speak clearly into your microphone
-        5. The AI assistant's responses will play through your selected output device
-        6. Click 'Stop Chat' to end the conversation
+        1. Click 'Start Chat' to begin the conversation
+        2. Speak clearly into your microphone
+        3. The AI assistant's responses will play through your selected output device
+        4. Click 'Stop Chat' to end the conversation
         """)
         # else:
         #     st.warning("Please authenticate using your Hume AI credentials in the sidebar")

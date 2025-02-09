@@ -1,7 +1,14 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# class Settings(BaseSettings):
+#   model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+
 class Settings(BaseSettings):
   model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+  hume_api_key: str
+  hume_secret_key: str
+  hume_config_id: str
 
   # OpenAI API
   OPENAI_MODEL_ID: str = "gpt-4o-mini"
@@ -10,10 +17,6 @@ class Settings(BaseSettings):
   # MongoDB database
   DATABASE_HOST: str = "YOUR_MONGODB_DATABASE_HOST"
   DATABASE_NAME: str = "YOUR_MONGODB_DATABASE_NAME"
-
-  # Hume API
-  HUME_API_KEY: str = "YOUR_HUME_API_KEY"
-  HUME_SECRET_KEY: str = "YOUR_HUME_SECRET_KEY"
 
   @property
   def OPENAI_MAX_TOKEN_WINDOW(self) -> int:

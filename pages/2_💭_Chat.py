@@ -105,7 +105,8 @@ def process_audio_input():
     audio = mic_recorder(
         start_prompt="Start recording",
         stop_prompt="Stop recording",
-        just_once=True
+        just_once=True,
+        use_container_width=True
     )
     
     if audio and len(audio["bytes"]) > 0:

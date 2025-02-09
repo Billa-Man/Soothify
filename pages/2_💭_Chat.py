@@ -19,7 +19,7 @@ if "valid_key" not in st.session_state:
 # Instead, we will initialize the client once the user authenticates.
 
 st.logo(
-    image="media/companylogo.png",
+    image="media/mainlogo.png",
     size="large"
 )
 

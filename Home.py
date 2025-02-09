@@ -3,13 +3,13 @@ import streamlit as st
 
 # Main page configuration
 st.set_page_config(
-    page_title="CalmNest - Your Mental Health Companion",
+    page_title="Soothify - Your Mental Health Companion",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 st.logo(
-    image="media/logo.jpg",
+    image="media/mainlogo.png",
     size="large"
 )
 
@@ -122,7 +122,7 @@ col1, col2, col3 = st.columns([1,2,1])
 
 with col2:
     st.markdown("<div style='margin-top: -2rem;'>", unsafe_allow_html=True)
-    st.markdown("<h1 style='text-align: center;'>Welcome to CalmNest</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Welcome to Soothify</h1>", unsafe_allow_html=True)
     st.markdown("<h3 style='text-align: center; color: #7792E3;'>Your AI-Powered Mental Health Companion</h3>", unsafe_allow_html=True)
     
 col_left, col_right = st.columns(2)
@@ -130,12 +130,12 @@ col_left, col_right = st.columns(2)
 with col_left:
     st.markdown("""
     <div class="feature-card">
-        <h4>How it works:</h4>
+        <h4>Panic Attack Support:</h4>
         <ul>
-            <li>Complete a quick assessment</li>
-            <li>Chat with our AI companion</li>
-            <li>Get personalized resources</li>
-            <li>Track your wellness journey</li>
+            <li>Real-time panic attack assistance</li>
+            <li>Breathing exercises and grounding techniques</li>
+            <li>Trigger identification and management</li>
+            <li>Emergency resource connections</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -143,12 +143,12 @@ with col_left:
 with col_right:
     st.markdown("""
     <div class="feature-card">
-        <h4>Key Features:</h4>
+        <h4>Mental Health Support:</h4>
         <ul>
-            <li>AI-powered therapeutic conversations</li>
-            <li>Personalized mental health assessments</li>
-            <li>Healthcare facility recommendations</li>
-            <li>Educational resources and self-help tools</li>
+            <li>Personalized mental health assessment</li>
+            <li>Daily mood tracking and analysis</li>
+            <li>Guided meditation and relaxation</li>
+            <li>Progress monitoring and insights</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -163,7 +163,7 @@ with col2:
     """, unsafe_allow_html=True)
     
     if st.button("Begin Assessment", use_container_width=True):
-        st.switch_page("pages/assessment.py")
+        st.switch_page("pages/Questionnaire.py")
     
     st.markdown("</div>", unsafe_allow_html=True)
     

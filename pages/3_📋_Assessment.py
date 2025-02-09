@@ -1,18 +1,22 @@
-# pages/questionnaire.py
 import streamlit as st
+from datetime import datetime, timedelta
 
 # Page configuration
 st.set_page_config(
-    page_title="MindfulAI - Assessment",
+    page_title="Soothify - Assessment",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 st.logo(
-    image="media/logo.jpg",
+    image="media/mainlogo.png",
     size="large"
 )
+
+# Initialize session state for previous assessment
+if 'last_assessment' not in st.session_state:
+    st.session_state.last_assessment = None
 
 # Custom CSS
 st.markdown("""
@@ -76,7 +80,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Questions dictionary with scoring weights
 # Questions dictionary with scoring weights
 questions = {
     'q1': {
@@ -142,6 +145,25 @@ if 'score' not in st.session_state:
 # Main content
 st.markdown("<h1 style='text-align: center; color: #262730;'>Mental Health Assessment</h1>", unsafe_allow_html=True)
 
+# Show previous assessment if it exists
+if st.session_state.last_assessment and st.session_state.current_question == 0:
+    st.markdown(f"""
+        <div class="score-card">
+            <h3>Your Previous Assessment</h3>
+            <p>Taken on: {st.session_state.last_assessment['date'].strftime('%B %d, %Y')}</p>
+            <h3 class="{st.session_state.last_assessment['color']}">
+                Severity Level: {st.session_state.last_assessment['severity'].title()}
+            </h3>
+            <p>{st.session_state.last_assessment['recommendation']}</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Start New Assessment", use_container_width=True):
+            st.session_state.current_question = 1
+            st.rerun()
+
 # Only show progress during questions
 if st.session_state.current_question < len(questions):
     progress = st.session_state.current_question / len(questions)
@@ -157,7 +179,6 @@ if st.session_state.current_question < len(questions):
         </div>
     """, unsafe_allow_html=True)
     
-    # Default to previous answer if it exists
     default_index = (question['options'].index(st.session_state.responses[q_id]) 
                     if q_id in st.session_state.responses 
                     else 0)
@@ -212,7 +233,17 @@ if st.session_state.current_question == len(questions):
         color = "severity-severe"
         recommendation = "We strongly recommend immediate consultation with a mental health professional."
         action_button = "Find Facilities"
-        action_page = "pages/facilities.py"
+        action_page = "pages/Facilities.py"
+
+    # Store current assessment
+    st.session_state.last_assessment = {
+        'date': datetime.now(),
+        'severity': severity,
+        'color': color,
+        'recommendation': recommendation,
+        'score': st.session_state.score,
+        'percentage': score_percentage
+    }
 
     st.markdown(f"""
         <div class="score-card">

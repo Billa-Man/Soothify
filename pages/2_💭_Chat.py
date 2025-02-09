@@ -13,6 +13,11 @@ if "messages" not in st.session_state:
 if "audio_output" not in st.session_state:
     st.session_state.audio_output = None
 
+st.logo(
+    image="media/companylogo.png",
+    size="large"
+)
+
 def process_audio_input():
     audio = mic_recorder(
         start_prompt="Start recording",
@@ -141,8 +146,6 @@ def main():
 
     # Sidebar
     with st.sidebar:
-        st.image("media/logo.png", width=100)
-        st.markdown("---")
         st.markdown("""
         <div style='font-family: "Source Sans Pro", sans-serif;'>
         <h4 style='color: #7792E3;'>How it works:</h4>

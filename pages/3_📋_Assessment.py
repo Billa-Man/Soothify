@@ -9,6 +9,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+st.logo(
+    image="media/companylogo.png",
+    size="large"
+)
+
 # Custom CSS
 st.markdown("""
     <style>
@@ -231,8 +236,6 @@ if st.session_state.current_question == len(questions):
 
 # Sidebar
 with st.sidebar:
-    st.image("media/logo.png", width=100)
-    st.markdown("---")
     st.markdown("""
     <div style='font-family: "Source Sans Pro", sans-serif;'>
     <h4 style='color: #7792E3;'>Assessment Guidelines:</h4>

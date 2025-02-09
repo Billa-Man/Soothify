@@ -301,6 +301,8 @@ class Connection:
             # Encode audio data to base64 and send as JSON message
             encoded_audio = base64.b64encode(wav_content).decode('utf-8')
             json_message = json.dumps({"type": "audio_input", "data": encoded_audio})
+            json_message2 = json.dumps({"type": "session_settings","context": {"text": "The user is having a panic attack and your job is to provide soothing support to them.","type": "persistent"}})
+            await socket.send(json_message2)
             await socket.send(json_message)
 
             # Reset buffer for the next chunk of audio data

@@ -163,7 +163,7 @@ with col2:
     """, unsafe_allow_html=True)
     
     if st.button("Begin Assessment", use_container_width=True):
-        st.switch_page("pages/Questionnaire.py")
+        st.switch_page("pages/2_Assessment.py")
     
     st.markdown("</div>", unsafe_allow_html=True)
     

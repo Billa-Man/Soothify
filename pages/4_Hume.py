@@ -666,7 +666,7 @@ class StreamlitAudioChat:
         self.authenticate()
         self.setup_audio_devices()
 
-        with open("media/siri_wave.json", "r") as f:
+        with open("media/hume.json", "r") as f:
             lottie_data = json.load(f)
         lottie_json_str = json.dumps(lottie_data)
 

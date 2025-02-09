@@ -2,18 +2,21 @@ import base64
 import json
 import streamlit as st
 import streamlit.components.v1 as components
-from openai import OpenAI
-from settings import settings
+from openai import OpenAI, AuthenticationError
 from streamlit_mic_recorder import mic_recorder
 
-# Initialize OpenAI client
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+from settings import settings
 
-# Initialize session state
+# Initialize session state variables
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "audio_output" not in st.session_state:
     st.session_state.audio_output = None
+if "valid_key" not in st.session_state:
+    st.session_state.valid_key = None
+
+# (Remove the static client initialization that uses settings.OPENAI_API_KEY)
+# Instead, we will initialize the client once the user authenticates.
 
 st.logo(
     image="media/companylogo.png",
@@ -23,14 +26,11 @@ st.logo(
 def lottie_audio_visualizer(audio_bytes: bytes, lottie_json: str):
     """
     Renders a Lottie animation that reacts to the audio's amplitude.
-    The animation container is styled so it can be placed above the chat input.
     """
     # Convert audio bytes to a Base64 string
     audio_base64 = base64.b64encode(audio_bytes).decode()
     
     # Build the HTML/JavaScript code.
-    # Note: we removed the fixed positioning and use inline styling so that
-    # the animation appears where the component is rendered.
     html_code = f"""
     <div id="lottie-container" style="
             width: 300px;
@@ -45,10 +45,7 @@ def lottie_audio_visualizer(audio_bytes: bytes, lottie_json: str):
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.7.5/lottie.min.js"></script>
     
     <script>
-      // Load the Lottie JSON animation
       var lottieData = {lottie_json};
-      
-      // Initialize the Lottie animation in the container
       var anim = lottie.loadAnimation({{
         container: document.getElementById('lottie-container'),
         renderer: 'svg',
@@ -57,7 +54,6 @@ def lottie_audio_visualizer(audio_bytes: bytes, lottie_json: str):
         animationData: lottieData
       }});
       
-      // Set up the Web Audio API to analyze the audio.
       var audioElement = document.getElementById('custom-audio');
       var AudioContext = window.AudioContext || window.webkitAudioContext;
       var audioCtx = new AudioContext();
@@ -66,12 +62,10 @@ def lottie_audio_visualizer(audio_bytes: bytes, lottie_json: str):
       var bufferLength = analyser.frequencyBinCount;
       var dataArray = new Uint8Array(bufferLength);
       
-      // Connect the audio element to the analyser node.
       var source = audioCtx.createMediaElementSource(audioElement);
       source.connect(analyser);
       analyser.connect(audioCtx.destination);
       
-      // Animate the Lottie container based on audio amplitude.
       function animate() {{
           requestAnimationFrame(animate);
           analyser.getByteFrequencyData(dataArray);
@@ -80,12 +74,10 @@ def lottie_audio_visualizer(audio_bytes: bytes, lottie_json: str):
               sum += dataArray[i];
           }}
           var average = sum / bufferLength;
-          // Compute a scale factor (adjust the math as needed)
           var scale = 0.9 + average / 256;
           document.getElementById('lottie-container').style.transform = 'scale(' + scale + ')';
       }}
       
-      // Start analyzing once the audio starts playing.
       audioElement.onplay = function() {{
           if (audioCtx.state === 'suspended') {{
               audioCtx.resume();
@@ -93,7 +85,6 @@ def lottie_audio_visualizer(audio_bytes: bytes, lottie_json: str):
           animate();
       }};
       
-      // Auto-start playback (note: browsers may require a user gesture).
       audioElement.play().catch(function(err) {{
           console.log("Autoplay failed:", err);
       }});
@@ -101,7 +92,7 @@ def lottie_audio_visualizer(audio_bytes: bytes, lottie_json: str):
     """
     components.html(html_code, height=320)
 
-def process_audio_input():
+def process_audio_input(client):
     audio = mic_recorder(
         start_prompt="Start recording",
         stop_prompt="Stop recording",
@@ -122,12 +113,12 @@ def process_audio_input():
             return None
     return None
 
-def get_complete_response(text):
+def get_complete_response(client, text):
     messages = [{"role": "user", "content": text}]
     try:
         with st.spinner("Generating response..."):
             response = client.chat.completions.create(
-                model=settings.OPENAI_MODEL_ID,
+                model=settings.OPENAI_MODEL_ID,  # or use settings.OPENAI_MODEL_ID if you prefer
                 messages=messages
             )
         return response.choices[0].message.content
@@ -173,9 +164,43 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
+    # -------------------------------
+    # Sidebar: OpenAI API Key Authenticator
+    # -------------------------------
+    with st.sidebar:
+        st.header("API Key Authentication")
+        api_key_input = st.text_input("Enter your OpenAI API Key", type="password")
+        if st.button("Authenticate", key="auth_button", use_container_width=True):
+            try:
+                test_client = OpenAI(api_key=api_key_input)
+                # Make a simple test call (e.g., list available models)
+                test_client.models.list()
+                st.session_state.valid_key = api_key_input
+                st.sidebar.success("Authentication successful!")
+            except AuthenticationError:
+                st.sidebar.error("Invalid API key")
+            except Exception as e:
+                st.sidebar.error(f"Authentication failed: {str(e)}")
+    
+    # If no valid API key is provided, do not run the rest of the app.
+    # if not st.session_state.valid_key:
+    #     st.warning("Please authenticate with your OpenAI API Key using the sidebar to continue.")
+    #     st.stop()
+    
+    # Initialize the OpenAI client with the authenticated API key
+    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    
+    # -------------------------------
+    # Main App Logic
+    # -------------------------------
+    
     # Load Lottie animation JSON data for the Siri wave.
-    with open("media/siri_wave.json", "r") as f:
-        lottie_data = json.load(f)
+    try:
+        with open("media/siri_wave.json", "r") as f:
+            lottie_data = json.load(f)
+    except Exception as e:
+        st.error("Could not load Lottie animation data.")
+        return
     lottie_json_str = json.dumps(lottie_data)
     
     # Use generated audio if available; otherwise, use a silent audio file.
@@ -189,7 +214,7 @@ def main():
             st.error("Missing 'media/silence.mp3' file for default audio.")
             return
 
-    # *** NEW: Place the Lottie animation above the chat input bar ***
+    # Render the Lottie animation above the chat input.
     lottie_audio_visualizer(audio_bytes, lottie_json_str)
 
     # Input container (chat input and mic recorder)
@@ -198,7 +223,7 @@ def main():
         with col1:
             user_text = st.chat_input("Share your thoughts...")
         with col2:
-            user_audio = process_audio_input()
+            user_audio = process_audio_input(client)
 
     # Handle input: use audio transcription or text input.
     if user_audio or user_text:
@@ -206,7 +231,7 @@ def main():
         st.session_state.messages.append({"role": "user", "content": input_text})
 
         # Get the AI response
-        full_response = get_complete_response(input_text)
+        full_response = get_complete_response(client, input_text)
         
         if full_response:
             # Generate audio from the response
@@ -228,7 +253,7 @@ def main():
             })
             st.rerun()
 
-    # Main content area: display chat history.
+    # Display chat history.
     with st.container():
         st.markdown('<div class="main-content">', unsafe_allow_html=True)
         for message in st.session_state.messages:
@@ -236,13 +261,12 @@ def main():
                 st.write(message["content"])
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Sidebar with additional information.
+    # Additional sidebar content.
     with st.sidebar:
         st.markdown("""
         <div style='font-family: "Source Sans Pro", sans-serif;'>
         <h4 style='color: #7792E3;'>How it works:</h4>
         <ol style='color: #262730;'>
-            <li>Complete a brief assessment</li>
             <li>Chat with our AI companion</li>
             <li>Get personalized support</li>
             <li>Access helpful resources</li>

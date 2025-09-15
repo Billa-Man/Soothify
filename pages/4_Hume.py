@@ -144,25 +144,34 @@ class AsyncLoopThread:
             raise RuntimeError("Background loop is not running")
         return asyncio.run_coroutine_threadsafe(coro, self.loop)
 
+    async def _shutdown(self):
+        # Runs inside the loop: cancel all tasks and wait for them to finish
+        current = asyncio.current_task()
+        tasks = [t for t in asyncio.all_tasks() if t is not current]
+        for t in tasks:
+            t.cancel()
+        with contextlib.suppress(Exception):
+            await asyncio.gather(*tasks, return_exceptions=True)
+
     def stop(self) -> None:
+        if getattr(self, "_stopping", None) is None:
+            self._stopping = threading.Event()
         if self._stopping.is_set():
             return
         self._stopping.set()
 
-        def _cancel_all():
-            try:
-                current = asyncio.current_task()
-                for task in asyncio.all_tasks():
-                    if task is not current:
-                        task.cancel()
-            except Exception:
-                pass
-            self.loop.stop()
+        # Ask the loop to cancel & await tasks
+        with contextlib.suppress(Exception):
+            fut = asyncio.run_coroutine_threadsafe(self._shutdown(), self.loop)
+            with contextlib.suppress(Exception):
+                fut.result(timeout=2)  # give tasks a moment to unwind
 
-        with contextlib.suppress(RuntimeError):
-            self.loop.call_soon_threadsafe(_cancel_all)
+        # Now stop the loop and join the thread
+        with contextlib.suppress(Exception):
+            self.loop.call_soon_threadsafe(self.loop.stop)
+        self.thread.join(timeout=3)
 
-        self.thread.join(timeout=2)
+        # Close the loop to release resources
         with contextlib.suppress(Exception):
             self.loop.close()
 
@@ -190,7 +199,7 @@ class Connection:
         while not stop_event.is_set():
             try:
                 async with websockets.connect(
-                    socket_url, ping_interval=20, ping_timeout=20, max_size=None
+                    socket_url, ping_interval=20, ping_timeout=20, close_timeout=1, max_size=None
                 ) as ws:
                     # Send session settings once (PCM in)
                     session_settings = {
@@ -634,19 +643,25 @@ def main():
     with col2:
         if st.button("Stop Chat", disabled=stop_disabled):
             try:
-                # Signal background to stop
-                if st.session_state.stop_event:
-                    st.session_state.stop_event.set()
-
-                # Close mic stream
+                # 1) Close mic stream first to unblock any blocking reads
                 if st.session_state.input_stream is not None:
                     with contextlib.suppress(Exception):
                         st.session_state.input_stream.stop_stream()
                         st.session_state.input_stream.close()
                     st.session_state.input_stream = None
 
-                # Clear future and (optionally) stop loop thread
-                st.session_state.stream_future = None
+                # 2) Signal background to stop
+                if st.session_state.stop_event:
+                    st.session_state.stop_event.set()
+
+                # 3) Give the running future a brief moment to exit gracefully
+                fut = st.session_state.get("stream_future")
+                if fut is not None:
+                    with contextlib.suppress(Exception):
+                        fut.result(timeout=2)
+                    st.session_state.stream_future = None
+
+                # 4) Stop the background loop thread
                 if st.session_state.loop_thread is not None:
                     with contextlib.suppress(Exception):
                         st.session_state.loop_thread.stop()
@@ -654,11 +669,9 @@ def main():
 
                 st.session_state.chat_active = False
                 st.success("Stopped.")
-                # Force refresh so Start enables and Stop disables immediately
                 (getattr(st, "rerun", st.rerun))()
             except Exception as e:
                 st.error(f"Failed to stop: {e}")
-
 
 
     st.caption("Built with Streamlit + websockets + PyAudio. PCM in; WAV out. Clean stop & reconnect handling.")

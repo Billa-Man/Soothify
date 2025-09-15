@@ -354,6 +354,32 @@ class Connection:
                     except Exception as e:
                         logger.debug(f"failed to parse WAV from audio_output: {e}")
                         continue
+                    
+                    # --- compute RMS (0..1) from PCM16 and push to visualizer
+                    try:
+                        if wav_width == 2 and pcm:
+                            import array, math
+                            samples = array.array("h")
+                            samples.frombytes(pcm)
+                            n = len(samples)
+                            if n:
+                                # light sub-sampling to keep it cheap
+                                step = max(1, n // 2048)
+                                ssum = 0
+                                count = 0
+                                for i in range(0, n, step):
+                                    v = samples[i]
+                                    ssum += v * v
+                                    count += 1
+                                rms = math.sqrt(ssum / max(1, count)) / 32768.0
+                                push_tts_level(rms)
+                        else:
+                            # fallback if unexpected format
+                            push_tts_level(0.0)
+                    except Exception:
+                        pass
+                    # --- end RMS
+
 
                     # (Re)open output stream if params changed
                     need_new = (
@@ -406,7 +432,7 @@ def ensure_state_defaults():
     st.session_state.setdefault("selected_sample_rate", DEFAULT_SR)
     st.session_state.setdefault("config_id", DEFAULT_CONFIG_ID)
 
-def render_lottie_mic_visualizer(lottie_json_path: str = "media/hume.json", height: int = 260):
+def render_lottie_tts_visualizer(lottie_json_path: str = "media/hume.json", height: int = 260):
     import json, os
     import streamlit as st
     import streamlit.components.v1 as components
@@ -425,57 +451,82 @@ def render_lottie_mic_visualizer(lottie_json_path: str = "media/hume.json", heig
     html = f"""
     <style>
       #viz-wrap {{ width:100%; height:{height}px; display:flex; align-items:center; justify-content:center; }}
-      #lottie {{ width:100%; height:100%; transform-origin:center center; }}
-      .note {{ font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; font-size:13px; color:#6b7280; text-align:center; margin-top:8px; }}
+      #lottie   {{ width:100%; height:100%; transform-origin:center center; }}
+      .note     {{ font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; font-size:13px; color:#6b7280; text-align:center; margin-top:8px; }}
     </style>
     <div id="viz-wrap"><div id="lottie"></div></div>
-    <div class="note">Allow microphone access to see the animation react in real&nbsp;time.</div>
+    <div class="note">Visualizer reacts to the assistant’s voice (output), not your mic.</div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.10.2/lottie.min.js"></script>
     <script>
-      (async () => {{
+      (function() {{
         const animationData = {lottie_js_data};
         const container = document.getElementById('lottie');
         const anim = lottie.loadAnimation({{
           container, renderer:'svg', loop:true, autoplay:true, animationData
         }});
 
-        function rms(buf) {{
-          let sum = 0;
-          for (let i=0; i<buf.length; i++) {{ const v = (buf[i]-128)/128; sum += v*v; }}
-          return Math.sqrt(sum / buf.length);
+        let last = 0;
+        function apply(level) {{
+          level = Math.max(0, Math.min(1, Number(level)||0));
+          // ease toward target to avoid jitter
+          last = last + 0.25 * (level - last);
+          anim.setSpeed(0.6 + last * 2.0);
+          const scale = 1 + Math.min(0.35, last * 0.8);
+          container.style.transform = `scale(${{scale}})`;
         }}
 
-        try {{
-          const stream = await navigator.mediaDevices.getUserMedia({{ audio: {{ echoCancellation:true, noiseSuppression:true }} }});
-          const Ctx = window.AudioContext || window.webkitAudioContext;
-          const ctx = new Ctx();
-          const src = ctx.createMediaStreamSource(stream);
-          const analyser = ctx.createAnalyser();
-          analyser.fftSize = 1024;
-          src.connect(analyser);
-          const buf = new Uint8Array(analyser.fftSize);
-
-          function tick() {{
-            analyser.getByteTimeDomainData(buf);
-            const level = rms(buf);
-            const speed = 0.5 + Math.min(2.0, level * 3.0);
-            anim.setSpeed(speed);
-            const scale = 1 + Math.min(0.35, level * 0.8);
-            container.style.transform = `scale(${{scale}})`;
-            requestAnimationFrame(tick);
-          }}
-          tick();
-
-          document.addEventListener('click', () => {{ if (ctx.state === 'suspended') ctx.resume(); }});
-        }} catch (err) {{
-          let t = 0;
-          function idle() {{ t += 0.02; const scale = 1 + 0.05 * Math.sin(t); container.style.transform = `scale(${{scale}})`; requestAnimationFrame(idle); }}
-          idle();
+        // idle pulse when no messages arrive
+        let idleT = 0;
+        function idle() {{
+          idleT += 0.02;
+          const lvl = 0.03 + 0.02 * Math.sin(idleT);
+          apply(lvl);
+          requestAnimationFrame(idle);
         }}
+        idle();
+
+        // react to broadcast level messages from siblings
+        window.addEventListener('message', (ev) => {{
+          const d = ev && ev.data;
+          if (!d || d.type !== 'tts_level') return;
+          apply(d.v);
+        }}, false);
       }})();
     </script>
     """
     components.html(html, height=height + 60)
+
+def push_tts_level(level: float):
+    import time
+    import streamlit.components.v1 as components
+    try:
+        v = max(0.0, min(1.0, float(level)))
+    except Exception:
+        v = 0.0
+    # use a unique snippet each call so Streamlit executes it
+    ts = int(time.time() * 1000)
+    components.html(
+        f"""
+        <div style="display:none">{ts}</div>
+        <script>
+          (function(){{
+            var msg = {{type:'tts_level', v:{v:.4f}}};
+            try {{
+              if (parent && parent.frames && parent.frames.length) {{
+                for (var i=0; i<parent.frames.length; i++) {{
+                  try {{ parent.frames[i].postMessage(msg, '*'); }} catch(_e){{}}
+                }}
+              }} else if (parent) {{
+                try {{ parent.postMessage(msg, '*'); }} catch(_e){{}}
+              }} else {{
+                try {{ window.postMessage(msg, '*'); }} catch(_e){{}}
+              }}
+            }} catch(_e) {{}}
+          }})();
+        </script>
+        """,
+        height=0, width=0,
+    )
 
 def main():
     st.set_page_config(page_title="Hume Voice Chat (clean)", page_icon="🎧", layout="centered")
@@ -558,6 +609,9 @@ def main():
                 except Exception as e:
                     st.session_state.token_ok = False
                     st.error(f"Authentication failed: {e}")
+                    
+    with st.expander("Output Visualizer (AI voice)", expanded=True):
+        render_lottie_tts_visualizer("media/hume.json", height=260)
 
     # ---- Status ----
 

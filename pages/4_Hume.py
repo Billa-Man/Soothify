@@ -551,19 +551,39 @@ def main():
                     st.error(f"Authentication failed: {e}")
 
     # ---- Status ----
+
+    def _is_running() -> bool:
+        fut = st.session_state.get("stream_future")
+        if fut is not None:
+            try:
+                if not fut.done():
+                    return True
+            except Exception:
+                # if Future got invalidated, treat as not running
+                pass
+        ev = st.session_state.get("stop_event")
+        if ev is not None and not ev.is_set():
+            # we created a stop_event for an active session
+            return True
+        return False
+
     ready = st.session_state.token_ok and st.session_state.devices_ok
-    status = "Active" if st.session_state.chat_active else ("Ready" if ready else "Incomplete setup")
+
+    # Derive real running state and keep the flag in sync
+    running = _is_running()
+    st.session_state.chat_active = running
+
+    status = "Active" if running else ("Ready" if ready else "Incomplete setup")
     st.info(f"Status: {status}")
 
-    # ---- Controls ----
-    start_disabled = (not ready) or st.session_state.chat_active
-    stop_disabled = not st.session_state.chat_active
+    start_disabled = (not ready) or running
+    stop_disabled  = not running
+
     col1, col2 = st.columns(2)
 
     with col1:
         if st.button("Start Chat", disabled=start_disabled):
-            # Prevent double-starts if a previous future is still running
-            if st.session_state.stream_future and not st.session_state.stream_future.done():
+            if running:
                 st.warning("A chat is already running.")
             else:
                 try:
@@ -602,15 +622,19 @@ def main():
                         )
                     )
                     st.session_state.stream_future = fut
+
+                    # immediately reflect running state in UI
                     st.session_state.chat_active = True
                     st.success("Streaming started.")
-                    logger.info("Streaming started.")
+                    # Force a rerun so the Stop button enables right away
+                    (getattr(st, "rerun", st.rerun))()
                 except Exception as e:
                     st.error(f"Failed to start: {e}")
 
     with col2:
         if st.button("Stop Chat", disabled=stop_disabled):
             try:
+                # Signal background to stop
                 if st.session_state.stop_event:
                     st.session_state.stop_event.set()
 
@@ -621,7 +645,7 @@ def main():
                         st.session_state.input_stream.close()
                     st.session_state.input_stream = None
 
-                # Clear running future and (optionally) stop loop thread
+                # Clear future and (optionally) stop loop thread
                 st.session_state.stream_future = None
                 if st.session_state.loop_thread is not None:
                     with contextlib.suppress(Exception):
@@ -630,8 +654,12 @@ def main():
 
                 st.session_state.chat_active = False
                 st.success("Stopped.")
+                # Force refresh so Start enables and Stop disables immediately
+                (getattr(st, "rerun", st.rerun))()
             except Exception as e:
                 st.error(f"Failed to stop: {e}")
+
+
 
     st.caption("Built with Streamlit + websockets + PyAudio. PCM in; WAV out. Clean stop & reconnect handling.")
 

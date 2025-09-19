@@ -105,7 +105,11 @@ function Inner({ accessToken, configId }: { accessToken: string; configId?: stri
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { connect, disconnect, status } = useVoice();
-  const isConnected = String(status) === 'connected';
+  const isConnected = (() => {
+    const s: any = status as any;
+    const statusValue = typeof s === 'string' ? s : (s?.value || s?.state || s?.code);
+    return statusValue === 'connected';
+  })();
   const stopRequestedRef = useRef(false);
   const reconnectAttemptsRef = useRef(0);
 
@@ -140,9 +144,18 @@ function Inner({ accessToken, configId }: { accessToken: string; configId?: stri
   }, [connect, accessToken, configId]);
 
   const onStop = useCallback(() => {
+    console.log('[hume] stop requested by user');
+    setError(null);
+    setConnecting(false);
     stopRequestedRef.current = true;
     reconnectAttemptsRef.current = 0;
-    disconnect();
+    try {
+      disconnect();
+      console.log('[hume] disconnect called successfully');
+    } catch (e: any) {
+      console.error('[hume] error during disconnect:', e);
+      setError('Error stopping connection: ' + (e?.message || 'Unknown error'));
+    }
   }, [disconnect]);
 
   // Log status transitions and attempt auto-reconnect on unexpected closes
@@ -195,8 +208,24 @@ function Inner({ accessToken, configId }: { accessToken: string; configId?: stri
       <h1 className="text-2xl font-semibold text-center">Hume Voice Chat</h1>
       <Visualizer />
       <div className="flex gap-2 justify-center">
-        <button className={`px-4 py-2 rounded ${isConnected || connecting ? 'bg-slate-400' : 'bg-indigo-500 text-white'}`} disabled={isConnected || connecting} onClick={onStart}>Start Chat</button>
-        <button className={`px-4 py-2 rounded ${isConnected ? 'bg-red-500 text-white' : 'bg-slate-400'}`} disabled={!isConnected} onClick={onStop}>Stop Chat</button>
+        <button 
+          className={`px-4 py-2 rounded font-medium ${isConnected || connecting ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-500 text-white hover:bg-indigo-600 cursor-pointer'}`} 
+          disabled={isConnected || connecting} 
+          onClick={onStart}
+        >
+          Start Chat
+        </button>
+        <button 
+          className={`px-4 py-2 rounded font-medium ${isConnected ? 'bg-red-500 text-white hover:bg-red-600 cursor-pointer' : 'bg-slate-400 cursor-not-allowed'}`} 
+          disabled={!isConnected} 
+          onClick={onStop}
+        >
+          Stop Chat
+        </button>
+      </div>
+      <div className="text-center text-xs text-gray-600">
+        <p>Connection Status: <span className="font-mono">{isConnected ? '🟢 Connected' : connecting ? '🟡 Connecting' : '🔴 Disconnected'}</span></p>
+        <p>Stop Button: <span className="font-mono">{isConnected ? '✅ Enabled' : '❌ Disabled'}</span></p>
       </div>
       <p className="text-center text-sm muted">Status: {(() => { const s:any = status as any; return typeof s === 'string' ? s : (s?.value || s?.state || s?.code || 'unknown'); })()}{connecting ? ' (connecting...)' : ''}</p>
       {(() => { const s:any = status as any; const reason = s?.reason; return reason ? <p className="text-center text-xs" style={{ color: '#b91c1c' }}>{String(reason)}</p> : null; })()}

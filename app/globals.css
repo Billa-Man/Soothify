@@ -1,0 +1,115 @@
+@import "leaflet/dist/leaflet.css";
+@import "tailwindcss";
+
+/* Prevent FOUC by ensuring fonts are loaded before showing content */
+html {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+}
+
+:root {
+  /* Light theme base */
+  --background: #F9FAFB;
+  --foreground: #171717;
+  --surface: #ffffff;
+  --muted: #64748b;
+  --border: #e5e7eb;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --surface: #111214;
+    --muted: #9aa4b2;
+    --border: #26272b;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  }
+}
+
+/* Manual theme override via class */
+.dark-theme {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --surface: #111214;
+  --muted: #9aa4b2;
+  --border: #26272b;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Explicit light theme override (forces light regardless of OS preference) */
+.light-theme {
+  --background: #F9FAFB;
+  --foreground: #171717;
+  --surface: #ffffff;
+  --muted: #64748b;
+  --border: #e5e7eb;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: inherit;
+  /* Ensure smooth font loading */
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Light theme utility classes */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem; /* rounded-xl */
+  box-shadow: var(--shadow-sm);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  height: 2.25rem;
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+
+/* Focus rings */
+.btn:focus-visible, .input:focus-visible, select.input:focus-visible, a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.3);
+}
+
+.btn-primary {
+  background: #4f46e5; /* indigo-600 */
+  color: #ffffff;
+}
+.btn-primary:hover { background: #4338ca; }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-outline {
+  background: var(--surface);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+.btn-outline:hover { background: #f8fafc; }
+.btn-outline:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.muted { color: var(--muted); }

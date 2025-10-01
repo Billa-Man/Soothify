@@ -1,147 +1,152 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import lottie from 'lottie-web';
 
-type Message = { role: 'user' | 'assistant'; content: string };
+import { useChat } from '@/lib/hooks/useChat';
+import { useAudioRecording } from '@/lib/hooks/useAudioRecording';
+import { useTTS } from '@/lib/hooks/useTTS';
+import { AudioVisualizer } from '@/lib/components/AudioVisualizer';
+import { ChatMessage } from '@/lib/components/ChatMessage';
+import { ChatInput } from '@/lib/components/ChatInput';
+import { useEffect, useRef, useCallback } from 'react';
 
 export default function Chat() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [recording, setRecording] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const lottieContainerRef = useRef<HTMLDivElement | null>(null);
-  const lottieAnimRef = useRef<ReturnType<typeof lottie.loadAnimation> | null>(null);
+  const { messages, isLoading, error, sendMessage, clearMessages } = useChat();
+  const { isRecording, error: recordingError, duration, startRecording, stopRecording, getAudioFile } = useAudioRecording();
+  const { analyser, speak } = useTTS();
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const resp = await fetch('/media/siri_wave.json');
-        const data = await resp.json();
-        if (cancelled) return;
-        if (lottieContainerRef.current) {
-          lottieAnimRef.current = lottie.loadAnimation({
-            container: lottieContainerRef.current,
-            renderer: 'svg',
-            loop: true,
-            autoplay: true,
-            animationData: data,
-          });
-          lottieAnimRef.current.setSpeed(0.8);
-        }
-      } catch {}
-    })();
-    return () => {
-      cancelled = true;
-      try { lottieAnimRef.current?.destroy(); } catch {}
-    };
-  }, []);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  const send = async () => {
-    if (!input) return;
-    const next: Message[] = [...messages, { role: 'user' as const, content: input }];
-    setMessages(next);
-    setInput('');
+  const transcribeAudio = useCallback(async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    const res = await fetch('/api/chat', { method: 'POST', body: JSON.stringify({ messages: next }) });
-    const reader = res.body?.getReader();
-    if (!reader) return;
-    let assistant = '';
-    setMessages((prev) => [...prev, { role: 'assistant' as const, content: '' }]);
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      assistant += new TextDecoder().decode(value);
-      setMessages((prev) => {
-        const copy = [...prev];
-        copy[copy.length - 1] = { role: 'assistant' as const, content: assistant };
-        return copy;
+      const response = await fetch('/api/audio/stt', {
+        method: 'POST',
+        body: formData,
       });
-    }
 
-    // TTS playback with Lottie visualizer
-    if (assistant) {
-      try {
-        const resp = await fetch('/api/audio/tts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: assistant }) });
-        const buf = await resp.arrayBuffer();
-        const AudioCtx = window.AudioContext || (window as typeof window & {webkitAudioContext: typeof AudioContext}).webkitAudioContext;
-        const audioCtx = new AudioCtx();
-        if (audioCtx.state === 'suspended') await audioCtx.resume();
-        const audioBuf = await audioCtx.decodeAudioData(buf.slice(0));
-        const source = audioCtx.createBufferSource();
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        source.buffer = audioBuf;
-        source.connect(analyser);
-        analyser.connect(audioCtx.destination);
-        source.start(0);
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        const tick = () => {
-          analyser.getByteFrequencyData(dataArray);
-          const avg = dataArray.reduce((a,b)=>a+b,0) / dataArray.length / 255; // 0..1
-          const anim = lottieAnimRef.current;
-          if (anim) {
-            anim.setSpeed(0.6 + avg * 2.0);
-            if (lottieContainerRef.current) {
-              const scale = 1 + Math.min(0.35, avg * 0.8);
-              lottieContainerRef.current.style.transform = `scale(${scale})`;
-            }
-          }
-          if (audioCtx.state !== 'closed') requestAnimationFrame(tick);
-        };
-        tick();
-      } catch {}
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const transcribedText = await response.text();
+      if (transcribedText.trim()) {
+        await sendMessage(transcribedText.trim());
+      }
+    } catch (error) {
+      console.error('Transcription error:', error);
+    }
+  }, [sendMessage]);
+
+  // Auto-play TTS for assistant messages
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.role === 'assistant' && lastMessage.content && !isLoading) {
+      speak(lastMessage.content).catch(console.error);
+    }
+  }, [messages, isLoading, speak]);
+
+  const handleSendMessage = async (content: string) => {
+    await sendMessage(content);
+  };
+
+  const handleVoiceRecording = async () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      await startRecording();
     }
   };
 
+  // Handle completed voice recording
+  useEffect(() => {
+    if (!isRecording && getAudioFile()) {
+      const file = getAudioFile();
+      if (file) {
+        // Transcribe the recorded audio
+        transcribeAudio(file);
+      }
+    }
+  }, [isRecording, getAudioFile, transcribeAudio]);
+
+  const getDisplayError = () => {
+    return error || recordingError;
+  };
+
   return (
-    <main className="mx-auto max-w-2xl space-y-4">
+    <main className="mx-auto max-w-4xl space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold">AI Chat</h1>
-        <p className="muted">Type or speak — we’ll respond in real time.</p>
+        <h1 className="text-3xl font-semibold mb-2">AI Chat</h1>
+        <p className="text-muted">Type or speak — we&apos;ll respond in real time.</p>
       </div>
-      <div className="card p-4 space-y-3">
-        <div className="flex justify-center">
-          <div ref={lottieContainerRef} style={{ width: 200, height: 200 }} />
+
+      <div className="card p-6 space-y-4">
+        <div className="flex justify-center mb-4">
+          <AudioVisualizer
+            analyser={analyser}
+            width={200}
+            height={200}
+          />
         </div>
-        {messages.map((m, i) => (
-          <div key={i} className={m.role==='user' ? 'text-right' : 'text-left'}>
-            <div className={`inline-block rounded px-3 py-2 ${m.role==='user' ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}>{m.content}</div>
+
+        {getDisplayError() && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+            <p className="text-red-600 dark:text-red-400 text-sm">
+              {getDisplayError()}
+            </p>
           </div>
-        ))}
+        )}
+
+        <div className="space-y-4 max-h-96 overflow-y-auto">
+          {messages.length === 0 ? (
+            <div className="text-center text-muted py-8">
+              Start a conversation by typing a message or recording your voice.
+            </div>
+          ) : (
+            messages.map((message, index) => (
+              <ChatMessage
+                key={index}
+                message={message}
+                isLast={index === messages.length - 1 && isLoading}
+              />
+            ))
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
-      <div className="flex gap-2">
-        <input className="input flex-1" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Share your thoughts..." />
-        <button className="btn btn-primary" onClick={send}>Send</button>
+
+      <div className="flex gap-3">
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          disabled={isLoading}
+          placeholder="Share your thoughts..."
+        />
+
         <button
-          className={`btn ${recording ? 'btn-primary' : 'btn-outline'}`}
-          onClick={async () => {
-            if (!recording) {
-              const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-              const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-              mediaRecorderRef.current = mr;
-              chunksRef.current = [];
-              mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-              mr.onstop = async () => {
-                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-                const file = new File([blob], 'audio.webm', { type: 'audio/webm' });
-                const fd = new FormData();
-                fd.append('file', file);
-                const tr = await fetch('/api/audio/stt', { method: 'POST', body: fd });
-                const text = await tr.text();
-                if (text) {
-                  setInput(text);
-                }
-              };
-              mr.start();
-              setRecording(true);
-            } else {
-              mediaRecorderRef.current?.stop();
-              setRecording(false);
-            }
-          }}
-        >{recording ? 'Stop' : 'Record'}</button>
+          onClick={handleVoiceRecording}
+          disabled={isLoading}
+          className={`btn px-4 ${isRecording ? 'btn-primary' : 'btn-outline'}`}
+          title={isRecording ? `Recording... (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')})` : 'Start voice recording'}
+        >
+          {isRecording ? '⏹️' : '🎤'}
+        </button>
+
+        {messages.length > 0 && (
+          <button
+            onClick={clearMessages}
+            disabled={isLoading}
+            className="btn btn-outline text-slate-500 hover:text-slate-700"
+            title="Clear conversation"
+          >
+            🗑️
+          </button>
+        )}
       </div>
     </main>
   );
